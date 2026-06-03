@@ -1,0 +1,43 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y cmake build-essential
+      
+      - name: Build package
+        run: |
+          cmake -H. -B_build -DCPACK_GENERATOR="TGZ"
+          cmake --build _build --target package
+      
+      - name: Get package filename
+        run: |
+          echo "PACKAGE_OS=$(uname -s)" >> $GITHUB_ENV
+          echo "PACKAGE_ARCH=$(uname -m)" >> $GITHUB_ENV
+      
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "libprint"
+          body: "my first release"
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            _build/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
